@@ -3,6 +3,7 @@ package com.umoar.sistemaposfinal.controladores;
 import com.umoar.sistemaposfinal.modelos.Producto;
 import com.umoar.sistemaposfinal.servicios.ProductoService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -17,11 +18,40 @@ public class ProductoController {
     private final ProductoService productoService;
 
     @GetMapping
-    public ResponseEntity<List<Producto>> listarTodos(@RequestParam(required = false) Long categoriaId) {
+    public ResponseEntity<?> listarTodos(
+            @RequestParam(required = false) Integer page,
+            @RequestParam(required = false) Integer size,
+            @RequestParam(required = false) Long categoriaId,
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false, defaultValue = "idProducto") String sortField,
+            @RequestParam(required = false, defaultValue = "asc") String sortDirection) {
+
+        if (page != null || size != null) {
+            int pageNumber = (page != null && page >= 0) ? page : 0;
+            int pageSize = (size != null && size > 0) ? size : 10;
+            Page<Producto> resultado = productoService.listarPaginado(
+                    pageNumber, pageSize, categoriaId, search, sortField, sortDirection);
+            return ResponseEntity.ok(resultado);
+        }
+
         if (categoriaId != null) {
             return ResponseEntity.ok(productoService.listarPorCategoria(categoriaId));
         }
         return ResponseEntity.ok(productoService.listarTodos());
+    }
+
+    @GetMapping("/paginado")
+    public ResponseEntity<Page<Producto>> listarPaginado(
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) Long categoriaId,
+            @RequestParam(required = false) String search,
+            @RequestParam(defaultValue = "idProducto") String sortField,
+            @RequestParam(defaultValue = "asc") String sortDirection) {
+
+        Page<Producto> resultado = productoService.listarPaginado(
+                page, size, categoriaId, search, sortField, sortDirection);
+        return ResponseEntity.ok(resultado);
     }
 
     @GetMapping("/{id}")
